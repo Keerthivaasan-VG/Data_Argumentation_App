@@ -29,7 +29,7 @@ h1 { color: #0b5394; font-weight: 700; text-align: center; }
 """, unsafe_allow_html=True)
 
 # ================= HEADER =================
-st.markdown("<h1>🧪 Medical Image Data Augmentation</h1>", unsafe_allow_html=True)
+st.markdown("<h1>🧪 Image Data Augmentation</h1>", unsafe_allow_html=True)
 st.markdown("<p style='text-align:center;'>Upload MRI / Medical Images and Generate Augmented Data</p>", unsafe_allow_html=True)
 st.markdown("---")
 
