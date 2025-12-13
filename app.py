@@ -8,7 +8,7 @@ from io import BytesIO
 
 # ================= PAGE CONFIG =================
 st.set_page_config(
-    page_title="Medical Image Data Augmentation",
+    page_title="Image Data Augmentation",
     page_icon="🧪",
     layout="centered"
 )
