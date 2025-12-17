@@ -1,10 +1,8 @@
 import streamlit as st
 import zipfile
-import numpy as np
-from PIL import Image
-from tensorflow.keras import layers
+import random
+from PIL import Image, ImageEnhance
 from io import BytesIO
-import tensorflow as tf
 
 # ================= PAGE CONFIG =================
 st.set_page_config(
@@ -34,30 +32,25 @@ uploaded_file = (
     else st.camera_input("Capture Image")
 )
 
-num_images = st.slider("Number of augmented images", 1, 50, 50)
+num_images = st.slider("Number of augmented images", 1, 50, 20)
 
-augmenter = tf.keras.Sequential([
-    layers.RandomRotation(0.15),
-    layers.RandomZoom(0.2),
-    layers.RandomFlip("horizontal"),
-    layers.RandomContrast(0.2)
-])
+# ================= AUGMENT FUNCTION =================
+def augment_image(img):
+    img = img.rotate(random.randint(-20, 20))
+    if random.random() > 0.5:
+        img = img.transpose(Image.FLIP_LEFT_RIGHT)
+
+    img = ImageEnhance.Brightness(img).enhance(random.uniform(0.8, 1.2))
+    img = ImageEnhance.Contrast(img).enhance(random.uniform(0.8, 1.2))
+    return img
 
 # ================= BUTTON =================
 if st.button("Generate Augmented Images") and uploaded_file:
-
     try:
         image = Image.open(uploaded_file).convert("RGB")
         image.thumbnail((512, 512))
-        img = tf.expand_dims(np.array(image), axis=0)
 
-        augmented_images = []
-
-        for _ in range(num_images):
-            aug = augmenter(img, training=True)
-            aug_img = tf.cast(aug[0], tf.uint8).numpy()
-            augmented_images.append(Image.fromarray(aug_img))
-
+        augmented_images = [augment_image(image.copy()) for _ in range(num_images)]
         st.session_state.augmented_images = augmented_images
 
         zip_buffer = BytesIO()
@@ -69,11 +62,10 @@ if st.button("Generate Augmented Images") and uploaded_file:
 
         zip_buffer.seek(0)
         st.session_state.zip_data = zip_buffer.getvalue()
-
         st.success("Images generated successfully!")
 
-    except Exception as e:
-        st.error("Something went wrong. Please upload a valid image.")
+    except Exception:
+        st.error("Invalid image file. Please try another image.")
 
 # ================= DISPLAY =================
 if st.session_state.augmented_images:
