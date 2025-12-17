@@ -4,7 +4,6 @@ import random
 from PIL import Image, ImageEnhance
 from io import BytesIO
 
-# ================= PAGE CONFIG =================
 st.set_page_config(
     page_title="Image Data Augmentation",
     page_icon="🧪",
@@ -14,13 +13,13 @@ st.set_page_config(
 st.markdown("<h1 style='text-align:center;'>🧪 Image Data Augmentation</h1>", unsafe_allow_html=True)
 st.markdown("---")
 
-# ================= SESSION STATE =================
-if "augmented_images" not in st.session_state:
-    st.session_state.augmented_images = None
-if "zip_data" not in st.session_state:
-    st.session_state.zip_data = None
+# ---------------- STATE ----------------
+if "images" not in st.session_state:
+    st.session_state.images = None
+if "zipdata" not in st.session_state:
+    st.session_state.zipdata = None
 
-# ================= INPUT =================
+# ---------------- INPUT ----------------
 method = st.radio(
     "Choose image input method",
     ["Upload from File Manager", "Capture using Camera"]
@@ -34,49 +33,48 @@ uploaded_file = (
 
 num_images = st.slider("Number of augmented images", 1, 50, 20)
 
-# ================= AUGMENT FUNCTION =================
-def augment_image(img):
-    img = img.rotate(random.randint(-20, 20))
+# ---------------- AUGMENT ----------------
+def augment(img):
+    img = img.rotate(random.randint(-25, 25))
     if random.random() > 0.5:
         img = img.transpose(Image.FLIP_LEFT_RIGHT)
-
     img = ImageEnhance.Brightness(img).enhance(random.uniform(0.8, 1.2))
     img = ImageEnhance.Contrast(img).enhance(random.uniform(0.8, 1.2))
     return img
 
-# ================= BUTTON =================
+# ---------------- BUTTON ----------------
 if st.button("Generate Augmented Images") and uploaded_file:
     try:
-        image = Image.open(uploaded_file).convert("RGB")
-        image.thumbnail((512, 512))
+        base_img = Image.open(uploaded_file).convert("RGB")
+        base_img.thumbnail((512, 512))
 
-        augmented_images = [augment_image(image.copy()) for _ in range(num_images)]
-        st.session_state.augmented_images = augmented_images
+        images = [augment(base_img.copy()) for _ in range(num_images)]
+        st.session_state.images = images
 
         zip_buffer = BytesIO()
         with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as z:
-            for i, im in enumerate(augmented_images):
+            for i, im in enumerate(images):
                 buf = BytesIO()
                 im.save(buf, format="JPEG")
                 z.writestr(f"augmented_{i+1}.jpg", buf.getvalue())
 
         zip_buffer.seek(0)
-        st.session_state.zip_data = zip_buffer.getvalue()
-        st.success("Images generated successfully!")
+        st.session_state.zipdata = zip_buffer.getvalue()
+        st.success("Augmented images generated successfully!")
 
     except Exception:
-        st.error("Invalid image file. Please try another image.")
+        st.error("Please upload a valid image.")
 
-# ================= DISPLAY =================
-if st.session_state.augmented_images:
+# ---------------- OUTPUT ----------------
+if st.session_state.images:
     st.markdown("### 🖼 Preview")
     cols = st.columns(4)
-    for i, im in enumerate(st.session_state.augmented_images[:8]):
+    for i, im in enumerate(st.session_state.images[:8]):
         cols[i % 4].image(im, width="stretch")
 
     st.download_button(
         "⬇ Download Augmented Images (ZIP)",
-        data=st.session_state.zip_data,
-        file_name="augmented_images.zip",
-        mime="application/zip"
+        st.session_state.zipdata,
+        "augmented_images.zip",
+        "application/zip"
     )
